@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+!.env.example
+logs/
+audit.log
+outputs/
+work/**
+!work/model/
+!work/model/viewer.js
+!work/model/style.css
+!work/model/build.mjs
+work/model/bundle.js
+.DS_Store
+Thumbs.db

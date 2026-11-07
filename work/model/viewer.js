@@ -198,8 +198,9 @@ function buildRearGardenDetails(){
  polygon('Garage floor slab',OWNER_EXTERIOR.garageModel,'#596165',-.07,.1);
  const p=OWNER_EXTERIOR.garageModel.slice(0,-1);
  for(let i=0;i<p.length;i++){
-  const a=p[i],b=p[(i+1)%p.length],n=i===3?'Garage garden window wall':'Garage wall '+i;
-  const holes=i===3?[{start:.3,width:2.4,type:'open',head:2.02},{start:3.65,width:.72,type:'window',sill:1.5,head:1.76,frameColor:'#899393',divisions:1}]:[];
+  const a=p[i],b=p[(i+1)%p.length];
+  const n=i===0?'Garage garden window wall':i===3?'Garage drive wall':'Garage wall '+i;
+  const holes=i===0?[{start:3.55,width:.72,type:'window',sill:1.35,head:1.65,frameColor:'#899393',divisions:1}]:i===3?[{start:.3,width:2.4,type:'open',head:2.02}]:[];
   const w=wall(n,a,b,.14,'#4a5355',holes,2.1);w.traverse(o=>{if(o.isMesh&&o.name===n+' masonry'){o.geometry.computeBoundingBox();const q=o.geometry.boundingBox;o.material=greyMasonryMaterial(q.max.x-q.min.x,q.max.y-q.min.y);}});
   if(i===3){const door=group('Garage vehicle door',w);door.position.x=1.5;box('Garage sectional door',0,0,2.4,.07,2,'#303b3b',1,door,0);for(let y=.15;y<2;y+=.22)box('Garage door panel seam',0,.045,2.4,.008,.012,'#1f2929',y,door,0);}
  }
@@ -218,6 +219,101 @@ function buildRearGardenDetails(){
  const passage=group('Fence opening to garage drive');passage.userData={clearWidth:.9,endpoints:[ga,gb],confirmedByOwner:true};
  outdoorDim('Gap ~0.9 m',ga,gb,.35);
 }
+
+function buildRearServiceCorner(buildingEnd,garageEnd){
+ const corner=group('Rear service corner');
+ const garageFace=-23.28;
+ const pathLeft=-22.05;
+ const pathRight=-21.15;
+ const mulchFront=5.36;
+ const mulchBack=7.08;
+ const binPadEnd=8.41;
+ const planterFront=5.92;
+ const planterBack=7.77;
+ const planterWall=-19.78;
+
+ // The path runs between the two beds, with a paved apron and bin pad beside it.
+ const pavingColors=['#a59d88','#969581','#b3a590','#8f9588'];
+ function blockPaving(name,xStart,xEnd,zStart,zEnd){
+  box(name,(xStart+xEnd)/2,(zStart+zEnd)/2,xEnd-xStart,zEnd-zStart,.045,'#878476',.003,corner,0);
+  const columns=Math.round((xEnd-xStart)/.16);
+  const rows=Math.round((zEnd-zStart)/.16);
+  const width=(xEnd-xStart)/columns;
+  const depth=(zEnd-zStart)/rows;
+  for(let row=0;row<rows;row++)for(let col=0;col<columns;col++){
+   box('Rear garden path paver',xStart+(col+.5)*width,zStart+(row+.5)*depth,width-.007,depth-.007,.028,pavingColors[(row*7+col*3)%4],.039,corner,0);
+  }
+ }
+ blockPaving('Rear block-paved walkway',4.23,8.45,pathLeft,pathRight);
+ blockPaving('Paved apron in front of wood chips',4.23,mulchFront,garageFace,pathLeft);
+ box('Paved bin pad behind wood chips',(mulchBack+binPadEnd)/2,(garageFace+pathLeft)/2,binPadEnd-mulchBack,pathLeft-garageFace,.052,'#666d64',.012,corner,0);
+ for(let x=7.34;x<8.37;x+=.27)box('Bin pad slab joint',x,(garageFace+pathLeft)/2,.008,pathLeft-garageFace,.004,'#50574f',.04,corner,0);
+ box('Paving along the raised bed front',5.34,-20.46,1.16,1.38,.047,'#858b7d',.013,corner,0);
+
+ box('Service corner bark bed',(mulchFront+mulchBack)/2,(garageFace+pathLeft)/2,mulchBack-mulchFront,pathLeft-garageFace,.05,'#504238',.016,corner,0);
+ for(let i=0;i<130;i++){
+  const x=mulchFront+.04+(i*37%162)/100;
+  const z=garageFace+.04+(i*53%113)/100;
+  const chip=box('Service bark chip',x,z,.025,.039,.007,['#806950','#44392f','#aa9276'][i%3],.044,corner,0);
+  chip.rotation.y=i*2.4;
+ }
+ box('Wood-chip bed edging beside path',(mulchFront+mulchBack)/2,pathLeft,mulchBack-mulchFront,.064,.105,'#a6ab9c',.053,corner);
+ for(const x of [mulchFront,mulchBack])box('Wood-chip bed end edging',x,(garageFace+pathLeft)/2,.063,pathLeft-garageFace,.105,'#a6ab9c',.053,corner);
+
+ box('Raised flower-bed soil',(planterFront+planterBack)/2,(pathRight+planterWall)/2,planterBack-planterFront,planterWall-pathRight,.28,'#4f4c40',.14,corner);
+ const blockDepth=(planterWall-pathRight)/7;
+ for(let row=0;row<3;row++)for(let i=0;i<7;i++){
+  box('Flower-bed front retaining block',planterFront,pathRight+(i+.5)*blockDepth,.15,blockDepth-.008,.104,'#a5aaa0',.055+row*.107,corner);
+ }
+ box('Raised bed timber edge beside path',(planterFront+planterBack)/2,pathRight,planterBack-planterFront,.064,.25,'#705042',.155,corner);
+ box('Raised bed rear timber edge',planterBack,(pathRight+planterWall)/2,.064,planterWall-pathRight,.31,'#705042',.155,corner);
+ for(let i=0;i<12;i++){
+  const x=6.12+(i%4)*.4;
+  const z=-20.94+Math.floor(i/4)*.25;
+  if(x<6.63&&z>-20.57)continue;
+  const shrub=mesh(new THREE.IcosahedronGeometry(.19,1),'#4e7146',x,.4,z,'Flower bed foliage',corner);
+  shrub.scale.y=.75;
+  for(let j=0;j<3;j++)mesh(new THREE.IcosahedronGeometry(.033,1),'#be7798',x+(j-1)*.072,.53+j*.012,z,'Pink flowers',corner);
+ }
+
+ const barrelX=6.27;
+ const barrelZ=-20.11;
+ const barrelBase=.28;
+ const wallZ=-19.79;
+ const barrel=new THREE.LatheGeometry([
+  new THREE.Vector2(.235,0),new THREE.Vector2(.257,.045),new THREE.Vector2(.29,.25),
+  new THREE.Vector2(.3,.49),new THREE.Vector2(.286,.74),new THREE.Vector2(.269,.86),
+  new THREE.Vector2(.287,.86),new THREE.Vector2(.287,.89),new THREE.Vector2(.252,.89),
+  new THREE.Vector2(.252,.805),new THREE.Vector2(.224,.04),
+ ],32);
+ mesh(barrel,'#218f86',barrelX,barrelBase,barrelZ,'Turquoise rain barrel',corner,{side:THREE.DoubleSide});
+ cyl('Dark inside of rain barrel',barrelX,barrelZ,.252,.012,'#205f57',barrelBase+.65,corner);
+ beam('Smaller building rainwater pipe',[barrelX,2.17,wallZ],[barrelX,1.27,wallZ],.058,'#c0c8c1',corner);
+ beam('Rain barrel feed',[barrelX,1.27,wallZ],[barrelX,1.2,barrelZ],.053,'#c0c8c1',corner);
+
+ const length=Math.hypot(garageEnd[0]-buildingEnd[0],garageEnd[1]-buildingEnd[1]);
+ const boundary=group('Straight rear service boundary plinth',corner);
+ boundary.position.set(buildingEnd[0],0,buildingEnd[1]);
+ boundary.rotation.y=-Math.atan2(garageEnd[1]-buildingEnd[1],garageEnd[0]-buildingEnd[0]);
+ const plinth=box('Rear service boundary brick base',length/2,0,length,.15,.43,'#a77258',.215,boundary,0);
+ plinth.material=brickMat(length,.43);
+ for(let i=0;i<14;i++){
+  const y=.49+i*.094;
+  box('Rear boundary horizontal timber slat',length/2,0,length,.058,.078,'#6f4b3b',y,boundary,0);
+ }
+ for(const x of [0,length*.55,length]){
+  const pier=box('Rear boundary brick pier',x,0,.19,.21,.85,'#a77258',.425,boundary);
+  pier.material=brickMat(.19,.85);
+  box('Rear boundary fence post',x,0,.09,.1,.98,'#817d6b',1.29,boundary);
+ }
+
+ const bins=group('Bins on rear paved pad',corner);
+ box('Rear storage bin',8.03,-22.99,.38,.43,.78,'#303d3d',.42,bins);
+ box('Rear bin light doors',7.83,-22.99,.024,.35,.63,'#c2c8bc',.42,bins);
+ cyl('Rear black round bin',8.03,-22.49,.17,.72,'#2c3332',.39,bins);
+ cyl('Rear round bin light lid',8.03,-22.49,.19,.06,'#c6c9bc',.775,bins);
+}
+
 function buildPhotoGarden(){
  const old=current,site=group('Garden and garage - aerial and GRB registration');current=site;
  site.userData={source:'Owner photographs, Google aerial, GRB WFS EPSG:31370',registration:SURVEY_SITE.origin,estimate:true,gardenDepth:14.0,rearBuildingGap:3.64,fenceGap:.9};
@@ -232,35 +328,21 @@ function buildPhotoGarden(){
  // The main lawn continues to the fence; paving is only along its edges.
  const rearStones=polygon('Paved stones at rear fence',OWNER_EXTERIOR.fenceEndPaving,'#9ba491',-.025,.065);rearStones.userData={footprintPolygon:OWNER_EXTERIOR.fenceEndPaving,ownerConfirmed:true};
  for(let x=-.55;x<3.75;x+=.31)beam('Fence-end paving joint',[x,.044,-22.66],[x,.044,-23.08],.012,'#6f7b6a');
- // Owner clarification, from wall towards lawn: wood chips, paved stones,
- // then the little planted garden. The mulch directly meets the garage wall.
- const bark=box('Service corner bark bed',6.65,-22.65,2.2,1.25,.09,'#665544',.035);
- bark.userData={ownerConfirmedOrder:'wall, wood chips, paved stones, planted bed',wallEdgeZ:-23.275,pavingEdgeZ:-22.025};
- for(let i=0;i<130;i++){const x=5.63+(i*37%204)/100,z=-22.09-(i*53%112)/100;const chip=box('Service bark chip',x,z,.04,.055,.008,['#8e7961','#453e33','#b1a18a'][i%3],.085,current,0);chip.rotation.y=i*2.4;}
- box('Wood-chip bed front edging',6.65,-22.025,2.27,.075,.12,'#a6ab9c',.06);
- for(const x of [5.52,7.78])box('Wood-chip bed side edging',x,-22.65,.075,1.25,.12,'#a6ab9c',.06);
- const stones=box('Paved stones between wood chips and planted bed',6.125,-21.59,4.25,.87,.055,'#a4a38e',-.007);
- stones.userData={footprintPolygon:[[4,-21.155],[8.25,-21.155],[8.25,-22.025],[4,-22.025]],ownerConfirmed:true};
- for(let z=-21.25,row=0;z>-21.99;z-=.2,row++)for(let x=4.06,col=0;x<8.2;x+=.1,col++)box('Rear garden path paver',x,z,.094,.193,.014,['#a59d88','#969581','#b3a590','#8f9588'][(row*7+col*3)%4],.028,current,0);
  for(const [x,z] of [[1.28,-13.5],[1.28,-14.42]])box('Lawn service cover',x,z,.52,.52,.04,'#6d7669',.022);
  // Boundary splays outward towards the rear; the rear fence stops at the gap.
  fenceRun('Street-side garden fence',[-.335,-9.42],[-.79,-23.385]);
  fenceRun('Rear fence before pedestrian gap',[-.79,-23.385],[2.93,-23.168]);
- // Owner photo: the garage wall bounds this corner directly; no fence here.
- photoBrickWall('Far side rear boundary',[8.06,-19.554],[8.678,-22.832],.15,[],1.8);
  const plinth=box('Rear fence brick plinth',1.07,-23.275,3.72,.13,.4,'#a77258',.2);plinth.material=brickMat(3.72,.4);plinth.rotation.y=-.058;
  box('Left planting soil',-.15,-16.6,.5,10.3,.13,'#4f4c3d',.01);
  for(let i=0;i<17;i++){const z=-10.1-i*.72;for(let j=0;j<3;j++){const m=mesh(new THREE.IcosahedronGeometry(.24,1),['#617344','#456141','#6f844d'][j],-.15+(j-1)*.11,.45+j*.25,z,'Boundary shrubs');m.scale.y=1.45;}}
  gardenBrickBuilding('Separate garden brick outbuilding',[[4.286,-11.75],[7.685,-11.75],[8.185,-17.326],[5.183,-17.567],[4.725,-17.65]],'Outbuilding garden facade',[{start:.35,width:.82,type:'glassdoor',head:2.05,frameColor:C.darkwood,divisions:1},{start:3.05,width:1.75,type:'window',sill:.8,head:1.95,frameColor:C.darkwood,divisions:3}],2.25,2.72,'Outbuilding corrugated roof','Outbuilding floor slab');
- gardenBrickBuilding('Smaller garden brick building',[[5.183,-17.567],[8.185,-17.326],[8.06,-19.554],[5.425,-19.71]],'Smaller building garden facade',[{start:.15,width:.72,type:'door',head:1.98,frameColor:C.darkwood},{start:1.3,width:.53,type:'window',sill:.85,head:1.87,frameColor:C.darkwood,divisions:1}],2.22,2.4,'Smaller building separate low roof','Smaller building floor slab');
- box('Raised flower-bed soil',6.65,-20.55,2.2,1.15,.28,'#4f4c40',.13);
- for(let row=0;row<3;row++)for(let i=0;i<9;i++)box('Flower-bed retaining block',5.66+i*.25,-19.925,.245,.17,.115,'#a5aaa0',.06+row*.115);
- for(let row=0;row<3;row++)for(let i=0;i<5;i++)box('Flower-bed side block',5.48,-21.075+i*.25,.14,.245,.115,'#a5aaa0',.06+row*.115);
- for(let row=0;row<3;row++)for(let i=0;i<9;i++)box('Flower-bed edging beside paved path',5.66+i*.25,-21.15,.245,.14,.115,'#a5aaa0',.06+row*.115);
- for(let i=0;i<13;i++){const x=5.76+(i%5)*.31,z=-20.225-Math.floor(i/5)*.29;mesh(new THREE.IcosahedronGeometry(.2,1),'#4e7146',x,.43,z,'Flower bed foliage');for(let j=0;j<3;j++)mesh(new THREE.IcosahedronGeometry(.035,1),'#be7798',x+(j-1)*.07,.6+j*.025,z,'Pink flowers');}
- cyl('Turquoise rain barrel',7.8,-19.96,.3,.88,'#339f98',.44);cyl('Rain barrel rim',7.8,-19.96,.318,.04,'#49b4a8',.9);cyl('Rain barrel open top',7.8,-19.96,.275,.008,'#2e726e',.922);
- beam('Smaller building rainwater pipe',[7.8,2.25,-19.54],[7.8,1,-19.54],.065,'#b2c1bb');beam('Rain barrel feed',[7.8,1,-19.54],[7.8,.94,-19.96],.055,'#b2c1bb');
- const bin=group('Bins by rear fence');box('Rear storage bin',.2,-22.75,.38,.44,.78,'#303d3d',.4,bin);box('Rear bin light doors',.2,-22.51,.32,.025,.63,'#c2c8bc',.39,bin);cyl('Rear black round bin',.8,-22.75,.17,.72,'#2c3332',.36,bin);cyl('Rear round bin light lid',.8,-22.75,.19,.06,'#c6c9bc',.75,bin);
+ // Use the larger building's outer wall line through the smaller building and fence.
+ const boundarySlope=(8.185-7.685)/(-17.326+11.75);
+ const boundaryX=z=>8.185+(z+17.326)*boundarySlope;
+ const smallerBuildingEnd=[boundaryX(-19.554),-19.554];
+ const garageBoundaryEnd=[boundaryX(-23.28),-23.28];
+ gardenBrickBuilding('Smaller garden brick building',[[5.183,-17.567],[8.185,-17.326],smallerBuildingEnd,[5.425,-19.71]],'Smaller building garden facade',[{start:.15,width:.72,type:'door',head:1.98,frameColor:C.darkwood},{start:1.3,width:.53,type:'window',sill:.85,head:1.87,frameColor:C.darkwood,divisions:1}],2.22,2.4,'Smaller building separate low roof','Smaller building floor slab');
+ buildRearServiceCorner(smallerBuildingEnd,garageBoundaryEnd);
  // Keep the confirmed kitchen doorway and annex alignment.
  const pier=box('Patio brick pier',3.05,-11.32,.28,.28,1.12,'#a6795d',.56);pier.material=brickMat(.28,1.12);box('Patio pier stone cap',3.05,-11.32,.34,.34,.055,'#a6ab9f',1.145);
  const low=box('Patio low brick side wall',3.05,-10.5,.14,1.62,.9,'#a6795d',.45);low.material=brickMat(1.62,.9);
